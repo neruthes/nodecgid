@@ -19,6 +19,7 @@ const genProgramIdHash = function (cmdline) {
 // ====================================================
 // Runtime Memory
 // ====================================================
+const subprocessList = [];
 
 // ====================================================
 // Daemon Startup
@@ -65,21 +66,46 @@ Object.keys(rawListObj).map(function (x) {
 console.log(`[INFO] Starting these applets:`);
 console.log(appletsList);
 console.log(`-----------------------------------------`);
-appletsList.map(function (appletItem) {
+
+const startAppletDaemon = function (pseudohost) {
+    const appletItem = appletsList.filter(x => x.pseudohost === pseudohost)[0];
     const localEnv = JSON.parse(JSON.stringify(process.env));
     localEnv.cgi_pseudohost = appletItem.pseudohost;
     localEnv.cgi_programid = appletItem.cmdline;
     localEnv.cgi_portfile = `${CONFIG.portFileDir}/${appletItem.pseudohost}`;
     const cmdlineArr = appletItem.cmdline.split(' ');
 
-    spawn(cmdlineArr[0], cmdlineArr.slice(1), {
+    const subpr = spawn(cmdlineArr[0], cmdlineArr.slice(1), {
         env: localEnv
     });
+    subpr._pseudohost = pseudohost;
+    subpr.on('exit', function () {
+        // Automatically restart an applet daemons if it crashes
+        setTimeout(function () {
+            startAppletDaemon(subpr._pseudohost);
+        }, 6000);
+    });
+    subprocessList.push(subpr);
 
     setTimeout(function () {
         // Read applet daemon port after 567ms
         const appletDaemonPort = fs.readFileSync(localEnv.cgi_portfile).toString().trim();
         proxy.register(appletItem.pseudohost, `http://127.0.0.1:${appletDaemonPort}`);
     }, 567);
+};
+appletsList.map(function (appletItem) {
+    startAppletDaemon(appletItem.pseudohost)
 });
 
+
+// Close gracefully
+const cleanExit = function () {
+    console.log('killing', subprocessList.length, 'child processes');
+    subprocessList.forEach(function(subpr) {
+        subpr.kill();
+    });
+    setTimeout(process.exit, 300);
+};
+process.on('SIGINT', cleanExit);
+process.on('SIGTERM', cleanExit);
+// process.on('SIGKILL', cleanExit); // Why does this cause automatic crash on startup???
