@@ -20,6 +20,7 @@ const genProgramIdHash = function (cmdline) {
 // Runtime Memory
 // ====================================================
 const subprocessList = [];
+let RUNLEVEL = 'BOOT';
 
 // ====================================================
 // Daemon Startup
@@ -81,9 +82,12 @@ const startAppletDaemon = function (pseudohost) {
     subpr._pseudohost = pseudohost;
     subpr.on('exit', function () {
         // Automatically restart an applet daemons if it crashes
+        if (RUNLEVEL === 'SHUTDOWN') {
+            return 0;       // Closing process? Do nothing.
+        };
         setTimeout(function () {
             startAppletDaemon(subpr._pseudohost);
-        }, 6000);
+        }, 1000);
     });
     subprocessList.push(subpr);
 
@@ -93,18 +97,24 @@ const startAppletDaemon = function (pseudohost) {
         proxy.register(appletItem.pseudohost, `http://127.0.0.1:${appletDaemonPort}`);
     }, 567);
 };
+RUNLEVEL = 'MULTIAPP';
 appletsList.map(function (appletItem) {
-    startAppletDaemon(appletItem.pseudohost)
+    startAppletDaemon(appletItem.pseudohost);
 });
+
+RUNLEVEL = 'READY';
+
+
 
 
 // Close gracefully
 const cleanExit = function () {
+    RUNLEVEL = 'SHUTDOWN';
     console.log('killing', subprocessList.length, 'child processes');
     subprocessList.forEach(function(subpr) {
         subpr.kill();
     });
-    setTimeout(process.exit, 300);
+    setTimeout(process.exit, 500);
 };
 process.on('SIGINT', cleanExit);
 process.on('SIGTERM', cleanExit);
