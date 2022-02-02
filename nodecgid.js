@@ -97,6 +97,9 @@ const startAppletDaemon = function (pseudohost) {
         proxy.register(appletItem.pseudohost, `http://127.0.0.1:${appletDaemonPort}`);
     }, 567);
 };
+
+
+
 RUNLEVEL = 'MULTIAPP';
 appletsList.map(function (appletItem) {
     startAppletDaemon(appletItem.pseudohost);

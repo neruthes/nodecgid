@@ -15,6 +15,8 @@ server {
     server_name nas.ndlt6g.lan;
     root /srv/myNAS;
     location ~ /$ {
+        proxy_set_header wwwroot $document_root;
+        proxy_set_header rawhost $host;
         proxy_set_header host 'coolaltindex-nodecgid.com';
         proxy_pass http://127.0.0.1:9345;
     }
