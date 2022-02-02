@@ -1,5 +1,25 @@
 {
   "dependencies": {
     "redbird": "^0.10.0"
-  }
+  },
+  "name": "nodecgid",
+  "description": "Nodejs CGI daemon",
+  "version": "0.1.0-pre1",
+  "main": "nodecgid.js",
+  "scripts": {
+    "test": "echo 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neruthes/nodecgid.git"
+  },
+  "keywords": [
+    "cgi"
+  ],
+  "author": "Neruthes",
+  "license": "GPL-2.0-only",
+  "bugs": {
+    "url": "https://github.com/neruthes/nodecgid/issues"
+  },
+  "homepage": "https://github.com/neruthes/nodecgid#readme"
 }
