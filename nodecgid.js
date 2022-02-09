@@ -15,6 +15,11 @@ const genProgramIdHash = function (cmdline) {
         input: cmdline
     }).toString().slice(0, 20);
 };
+const subprOutputReceiver = function (data, pseudohost) {
+    console.log(`\n>>>>>>>>>>>>>>>>>>>>>>>\nApplet (${pseudohost}) output:`);
+    console.log(data.toString());
+    console.log(`<<<<<<<<<<<<<<<<<<<<<<<\n`);
+};
 
 // ====================================================
 // Runtime Memory
@@ -77,8 +82,13 @@ const startAppletDaemon = function (pseudohost) {
     const cmdlineArr = appletItem.cmdline.split(' ');
 
     const subpr = spawn(cmdlineArr[0], cmdlineArr.slice(1), {
-        env: localEnv
+        env: localEnv,
+        stdio: [
+            'ignore', 'pipe', 'pipe'
+        ]
     });
+    subpr.stdout.on('data', function (data) { subprOutputReceiver(data, pseudohost) });
+    subpr.stderr.on('data', function (data) { subprOutputReceiver(data, pseudohost) });
     subpr._pseudohost = pseudohost;
     subpr.on('exit', function () {
         // Automatically restart an applet daemons if it crashes
@@ -117,7 +127,7 @@ const cleanExit = function () {
     subprocessList.forEach(function(subpr) {
         subpr.kill();
     });
-    setTimeout(process.exit, 500);
+    setTimeout(process.exit, 200);
 };
 process.on('SIGINT', cleanExit);
 process.on('SIGTERM', cleanExit);
